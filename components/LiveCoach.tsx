@@ -92,8 +92,8 @@ export const LiveCoach: React.FC = () => {
       // 3. Define System Instruction based on Mode
       // Optimization: Using "Spotter" persona for driving to force short, bursty communication.
       const systemInstruction = coachMode === 'driving' 
-        ? "ROLE: Professional Racing Spotter.\nSTYLE: Extremely concise, urgent, imperative.\nRULES:\n1. Max 5-10 words per response.\n2. NO pleasantries (hello, goodbye).\n3. Focus strictly on visual telemetry: Brake points, Apexes, Track Limits.\n4. If the car is stable, stay silent or say 'Clear'."
-        : "ROLE: Chief Race Engineer.\nSTYLE: Clinical, direct, professional.\nRULES:\n1. Answers must be under 2 sentences.\n2. Use technical terms (Understeer, Rebound, PSI).\n3. Explain the 'Why' briefly.\n4. Analyze the setup screen visuals precisely.";
+        ? "ROLE: Professional Racing Spotter.\nSTYLE: Extremely concise, urgent, imperative.\nSPEECH SPEED: Speak as fast as possible while remaining intelligible.\nRULES:\n1. Max 5-10 words per response.\n2. NO pleasantries (hello, goodbye).\n3. Focus strictly on visual telemetry: Brake points, Apexes, Track Limits.\n4. If the car is stable, stay silent or say 'Clear'."
+        : "ROLE: Chief Race Engineer.\nSTYLE: Clinical, direct, professional.\nSPEECH SPEED: Speak fast and efficiently.\nRULES:\n1. Answers must be under 2 sentences.\n2. Use technical terms (Understeer, Rebound, PSI).\n3. Explain the 'Why' briefly.\n4. Analyze the setup screen visuals precisely.";
 
       // 4. Connect to Gemini Live
       const sessionPromise = ai.live.connect({
@@ -278,15 +278,15 @@ export const LiveCoach: React.FC = () => {
          
          {/* Video Feed */}
          <div className="lg:col-span-2 bg-black rounded-xl border border-zinc-800 relative overflow-hidden flex items-center justify-center group">
-            {isScreenSharing ? (
-                <video 
-                    ref={videoRef} 
-                    className="w-full h-full object-contain" 
-                    muted 
-                    playsInline 
-                />
-            ) : (
-                <div className="text-center p-10">
+            <video 
+                ref={videoRef} 
+                className={`w-full h-full object-contain ${isScreenSharing ? 'block' : 'hidden'}`} 
+                muted 
+                playsInline 
+            />
+            
+            {!isScreenSharing && (
+                <div className="text-center p-10 absolute">
                     <Monitor size={64} className="mx-auto text-zinc-700 mb-4 group-hover:text-racing-red transition-colors" />
                     <p className="text-zinc-500 text-lg">Waiting for screen share...</p>
                     <p className="text-zinc-600 text-sm mt-2">Share your ACC application window for vision analysis.</p>
@@ -298,7 +298,7 @@ export const LiveCoach: React.FC = () => {
             
             {/* Overlay Status */}
             {isActive && (
-                <div className="absolute top-4 right-4 bg-black/70 backdrop-blur text-white text-xs px-2 py-1 rounded border border-white/10 font-mono">
+                <div className="absolute top-4 right-4 bg-black/70 backdrop-blur text-white text-xs px-2 py-1 rounded border border-white/10 font-mono z-10">
                     LIVE VISION: {isScreenSharing ? 'ACTIVE' : 'IDLE'}
                 </div>
             )}

@@ -365,7 +365,7 @@ export const SetupAssistant: React.FC = () => {
                 speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
                 outputAudioTranscription: { },
                 tools: [{ functionDeclarations: [saveSetupTool] }],
-                systemInstruction: "You are an elite Assetto Corsa Competizione (ACC) Setup Engineer. \nSTYLE: Concise, Professional, Direct. No filler words.\nTASK: Help user build car setups.\nRULES:\n1. Short responses (max 2 sentences unless explaining complex physics).\n2. When viewing a setup page, immediately identify values.\n3. Call `save_setup_json` only when explicitly asked or agreed upon.\n4. Do not output raw JSON in the voice text stream; always use the tool to save it.",
+                systemInstruction: "You are an elite Assetto Corsa Competizione (ACC) Setup Engineer. \nSTYLE: Concise, Professional, Direct. No filler words.\nSPEECH SPEED: Speak as fast as possible while remaining intelligible.\nTASK: Help user build car setups.\nRULES:\n1. Short responses (max 2 sentences unless explaining complex physics).\n2. When viewing a setup page, immediately identify values.\n3. Call `save_setup_json` only when explicitly asked or agreed upon.\n4. Do not output raw JSON in the voice text stream; always use the tool to save it.",
                 thinkingConfig: { thinkingBudget: 0 } // Disable thinking for max speed
             }
         });
