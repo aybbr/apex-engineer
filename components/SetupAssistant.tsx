@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { GoogleGenAI, GenerateContentResponse, LiveServerMessage, Modality, Type, FunctionDeclaration } from '@google/genai';
 import { Send, Upload, ImageIcon, Loader2, RefreshCw, Mic, Square, Monitor, Volume2, Video, FileJson, Download, Check } from 'lucide-react';
@@ -178,8 +177,13 @@ export const SetupAssistant: React.FC = () => {
     sourcesRef.current.forEach(s => s.stop());
     sourcesRef.current.clear();
     
-    if (audioContextRef.current) audioContextRef.current.close();
-    if (inputContextRef.current) inputContextRef.current.close();
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      audioContextRef.current.close();
+    }
+    
+    if (inputContextRef.current && inputContextRef.current.state !== 'closed') {
+      inputContextRef.current.close();
+    }
     
     setIsLive(false);
     setIsScreenSharing(false);
@@ -361,7 +365,8 @@ export const SetupAssistant: React.FC = () => {
                 speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } },
                 outputAudioTranscription: { },
                 tools: [{ functionDeclarations: [saveSetupTool] }],
-                systemInstruction: "You are an elite Assetto Corsa Competizione (ACC) Setup Engineer. \n1. Interact via voice. Help the user build the perfect car setup.\n2. When viewing a setup page, explain what values mean.\n3. If the user is satisfied or asks to save the setup, call the `save_setup_json` tool with a valid JSON content matching ACC format. \n4. Do not output raw JSON in the voice text stream; always use the tool to save it.",
+                systemInstruction: "You are an elite Assetto Corsa Competizione (ACC) Setup Engineer. \nSTYLE: Concise, Professional, Direct. No filler words.\nTASK: Help user build car setups.\nRULES:\n1. Short responses (max 2 sentences unless explaining complex physics).\n2. When viewing a setup page, immediately identify values.\n3. Call `save_setup_json` only when explicitly asked or agreed upon.\n4. Do not output raw JSON in the voice text stream; always use the tool to save it.",
+                thinkingConfig: { thinkingBudget: 0 } // Disable thinking for max speed
             }
         });
         sessionRef.current = sessionPromise;

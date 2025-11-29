@@ -48,12 +48,16 @@ export const LiveCoach: React.FC = () => {
     sourcesRef.current.clear();
     
     if (audioContextRef.current) {
-      audioContextRef.current.close();
+      if (audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close();
+      }
       audioContextRef.current = null;
     }
     if (inputContextRef.current) {
+      if (inputContextRef.current.state !== 'closed') {
         inputContextRef.current.close();
-        inputContextRef.current = null;
+      }
+      inputContextRef.current = null;
     }
 
     // Unfortunately we can't explicitly "close" the session object easily if it's just a promise, 
@@ -86,9 +90,10 @@ export const LiveCoach: React.FC = () => {
       setStatus('Connecting to Gemini Live...');
 
       // 3. Define System Instruction based on Mode
+      // Optimization: Using "Spotter" persona for driving to force short, bursty communication.
       const systemInstruction = coachMode === 'driving' 
-        ? "You are a high-performance racing coach (Spotter/Engineer) for Assetto Corsa Competizione. Your input is CRITICAL. Watch the screen feed. Provide concise, urgent, and precise instructions on braking points, racing lines, and car placement. Keep it short: 'Brake later', 'Missed apex', 'Wider exit'. Do not lecture, just coach."
-        : "You are a calm, analytical Race Engineer for Assetto Corsa Competizione. The user is in the setup menu or garage. Analyze the screen to see tire pressures, suspension settings, or data. Explain what each setting does and how to fix understeer/oversteer. Be detailed and educational.";
+        ? "ROLE: Professional Racing Spotter.\nSTYLE: Extremely concise, urgent, imperative.\nRULES:\n1. Max 5-10 words per response.\n2. NO pleasantries (hello, goodbye).\n3. Focus strictly on visual telemetry: Brake points, Apexes, Track Limits.\n4. If the car is stable, stay silent or say 'Clear'."
+        : "ROLE: Chief Race Engineer.\nSTYLE: Clinical, direct, professional.\nRULES:\n1. Answers must be under 2 sentences.\n2. Use technical terms (Understeer, Rebound, PSI).\n3. Explain the 'Why' briefly.\n4. Analyze the setup screen visuals precisely.";
 
       // 4. Connect to Gemini Live
       const sessionPromise = ai.live.connect({
@@ -161,6 +166,8 @@ export const LiveCoach: React.FC = () => {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } }
           },
           systemInstruction: systemInstruction,
+          // Optimization: Disable thinking budget to reduce latency for real-time coaching
+          thinkingConfig: { thinkingBudget: 0 } 
         }
       });
       
