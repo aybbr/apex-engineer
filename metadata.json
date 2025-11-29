@@ -1,0 +1,9 @@
+{
+  "name": "Apex Engineer: ACC Coach",
+  "description": "An AI-powered racing coach for Assetto Corsa Competizione. Features real-time voice coaching via vision analysis, setup assistance, and telemetry review.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "display-capture"
+  ]
+}
