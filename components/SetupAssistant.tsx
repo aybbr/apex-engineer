@@ -404,7 +404,7 @@ export const SetupAssistant: React.FC = () => {
                 SETUP <span className="text-blue-500">WIZARD</span>
                 {isLive && <span className="text-[10px] bg-red-500/20 text-red-500 border border-red-500/50 px-2 py-0.5 rounded animate-pulse">LIVE</span>}
             </h2>
-            <p className="text-xs text-zinc-400">Multimodal Assistant • Vision • Voice • Text</p>
+            <p className="text-xs text-zinc-400">Share your screen for real-time setup tuning and config generation, or chat to diagnose specific handling issues.</p>
         </div>
         
         <div className="flex items-center gap-3">

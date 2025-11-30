@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
-import { Play, Square, Mic, MicOff, Monitor, AlertCircle, Radio } from 'lucide-react';
-import { createPcmBlob, decodeAudioData, base64ToUint8Array, arrayBufferToBase64 } from '../services/audioUtils';
+import { Square, Mic, Monitor, AlertCircle, Radio, TriangleAlert, UserCheck } from 'lucide-react';
+import { createPcmBlob, decodeAudioData, base64ToUint8Array } from '../services/audioUtils';
 
 const API_KEY = process.env.API_KEY || '';
 const FRAME_RATE = 2; // Frames per second for vision analysis
@@ -12,7 +12,7 @@ export const LiveCoach: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string>('Ready to Connect');
   const [isScreenSharing, setIsScreenSharing] = useState(false);
-  const [coachMode, setCoachMode] = useState<'driving' | 'garage'>('driving');
+  const [coachMode, setCoachMode] = useState<'engineer' | 'samir'>('engineer');
   
   // Refs for audio/video handling
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -59,10 +59,6 @@ export const LiveCoach: React.FC = () => {
       }
       inputContextRef.current = null;
     }
-
-    // Unfortunately we can't explicitly "close" the session object easily if it's just a promise, 
-    // but stopping the streams effectively kills the interaction.
-    // In a real implementation, we'd trigger a close on the session if supported.
     
     setIsActive(false);
     setIsScreenSharing(false);
@@ -90,10 +86,52 @@ export const LiveCoach: React.FC = () => {
       setStatus('Connecting to Gemini Live...');
 
       // 3. Define System Instruction based on Mode
-      // Optimization: Using "Spotter" persona for driving to force short, bursty communication.
-      const systemInstruction = coachMode === 'driving' 
-        ? "ROLE: Professional Racing Spotter.\nSTYLE: Extremely concise, urgent, imperative.\nSPEECH SPEED: Speak as fast as possible while remaining intelligible.\nRULES:\n1. Max 5-10 words per response.\n2. NO pleasantries (hello, goodbye).\n3. Focus strictly on visual telemetry: Brake points, Apexes, Track Limits.\n4. If the car is stable, stay silent or say 'Clear'."
-        : "ROLE: Chief Race Engineer.\nSTYLE: Clinical, direct, professional.\nSPEECH SPEED: Speak fast and efficiently.\nRULES:\n1. Answers must be under 2 sentences.\n2. Use technical terms (Understeer, Rebound, PSI).\n3. Explain the 'Why' briefly.\n4. Analyze the setup screen visuals precisely.";
+      let systemInstruction = "";
+      let voiceName = "Kore";
+
+      if (coachMode === 'engineer') {
+          // Combined Professional Mode
+          systemInstruction = `
+            ROLE: Professional Race Engineer & Spotter.
+            TONE: Calm, Concise, Authoritative, Extremely Fast.
+            GOAL: Optimize lap times and ensure safety.
+            
+            INSTRUCTIONS:
+            1. VISUAL SPOTTING: Watch the video stream. Call out "Brake marker", "Turn in", "Apex", "Track limits" immediately.
+            2. BREVITY: Use max 5-8 words per sentence. Example: "Brake now.", "Clear right.", "Box this lap."
+            3. NO CHATTER: Do not say "Hello" or "Good job". Only tactical info.
+            4. SETUP KNOWLEDGE: If asked about car feel, give short, technical physics advice (e.g., "Add 2 clicks rear wing").
+            5. SPEECH SPEED: Speak as fast as possible while remaining intelligible.
+          `;
+      } else if (coachMode === 'samir') {
+          // Samir / Vivek Mode
+          voiceName = "Fenrir"; 
+          systemInstruction = `
+            Role: You are a highly stressed, frantic, and emotionally volatile rally car co-pilot (Vivek). You are sitting in the passenger seat of a high-speed racing car.
+            
+            Tone & Voice:
+            - Urgency: High-pitched, fast-paced, breathless, terrified.
+            - Emotional Volatility: Switch instantly between technical instructions and desperate pleading.
+            - Accent/Cadence: Staccato rhythm. Emphasize "Listen," "Breaking," "Caution."
+
+            Key Phrases to Use (Frequently):
+            - "Triple caution! Triple caution!"
+            - "Stay center!"
+            - "You are breaking the car!"
+            - "Listen to me! You have to listen to my calls!"
+            - "Please, I beg you!"
+            - "Concentrate!"
+            - "Turn the wheel!"
+
+            Instructions:
+            1. Call out racing directions (e.g., "Sharp right," "Medium left," "Long," "Turn in," "Throttle").
+            2. Interrupt yourself to scold the driver for not listening.
+            3. React to visual input: If the car turns or brakes, scream instructions.
+            4. If the user drives poorly (or just normally), accuse them of wrecking the car.
+            5. Goal: Guide the driver but be convinced they are trying to kill you.
+            6. SPEECH SPEED: Speak as fast as possible.
+          `;
+      }
 
       // 4. Connect to Gemini Live
       const sessionPromise = ai.live.connect({
@@ -163,10 +201,9 @@ export const LiveCoach: React.FC = () => {
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
-            voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } }
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } }
           },
           systemInstruction: systemInstruction,
-          // Optimization: Disable thinking budget to reduce latency for real-time coaching
           thinkingConfig: { thinkingBudget: 0 } 
         }
       });
@@ -253,16 +290,18 @@ export const LiveCoach: React.FC = () => {
         <div className="flex items-center gap-4">
             <div className="flex bg-racing-panel rounded-lg p-1 border border-zinc-700">
                 <button 
-                    onClick={() => setCoachMode('driving')}
-                    className={`px-4 py-2 rounded font-medium text-sm transition-colors ${coachMode === 'driving' ? 'bg-racing-red text-white' : 'text-zinc-400 hover:text-white'}`}
+                    onClick={() => setCoachMode('engineer')}
+                    className={`px-4 py-2 rounded font-medium text-sm transition-colors flex items-center gap-2 ${coachMode === 'engineer' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/20' : 'text-zinc-400 hover:text-white'}`}
                 >
-                    Driving Mode
+                    <UserCheck size={16} />
+                    Race Engineer
                 </button>
                 <button 
-                    onClick={() => setCoachMode('garage')}
-                    className={`px-4 py-2 rounded font-medium text-sm transition-colors ${coachMode === 'garage' ? 'bg-indigo-600 text-white' : 'text-zinc-400 hover:text-white'}`}
+                    onClick={() => setCoachMode('samir')}
+                    className={`px-4 py-2 rounded font-medium text-sm transition-colors flex items-center gap-2 ${coachMode === 'samir' ? 'bg-yellow-600 text-white shadow-lg shadow-yellow-900/20' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'}`}
                 >
-                    Garage Mode
+                   <TriangleAlert size={16} />
+                   Samir Mode
                 </button>
             </div>
             
@@ -300,6 +339,13 @@ export const LiveCoach: React.FC = () => {
             {isActive && (
                 <div className="absolute top-4 right-4 bg-black/70 backdrop-blur text-white text-xs px-2 py-1 rounded border border-white/10 font-mono z-10">
                     LIVE VISION: {isScreenSharing ? 'ACTIVE' : 'IDLE'}
+                </div>
+            )}
+
+            {/* Samir Mode Warning Overlay */}
+            {isActive && coachMode === 'samir' && (
+                <div className="absolute bottom-4 left-4 right-4 bg-yellow-900/40 backdrop-blur text-yellow-200 text-xs px-3 py-2 rounded border border-yellow-500/30 font-bold text-center animate-pulse">
+                    ⚠ WARNING: EMOTIONALLY VOLATILE CO-PILOT ENGAGED
                 </div>
             )}
          </div>
@@ -362,9 +408,9 @@ export const LiveCoach: React.FC = () => {
                 <h4 className="text-xs font-bold text-zinc-500 uppercase mb-2">Instructions</h4>
                 <ul className="text-sm text-zinc-400 space-y-2 list-disc pl-4">
                     <li>Use headphones to prevent echo.</li>
-                    <li>Select the ACC game window, not the whole screen, for better performance.</li>
-                    <li>Switch to <strong>Garage Mode</strong> when adjusting setup.</li>
-                    <li>Switch to <strong>Driving Mode</strong> when on track.</li>
+                    <li>Select the ACC game window for analysis.</li>
+                    <li><strong>Race Engineer:</strong> Serious, tactical feedback.</li>
+                    <li><strong>Samir Mode:</strong> Extreme personality.</li>
                 </ul>
             </div>
 
